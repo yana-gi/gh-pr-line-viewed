@@ -1,0 +1,177 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>fixture</title>
+<link rel="stylesheet" href="/content.css">
+<style>
+  body { font: 12px/20px ui-monospace, monospace; margin: 0; padding: 16px; }
+  .file { border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 16px; }
+  .file-header { padding: 8px; background: #f6f8fa; border-bottom: 1px solid #d0d7de; }
+  .file-info { font: 13px/20px sans-serif; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  td.old-diff-line-number, td.new-diff-line-number { width: 44px; text-align: right; padding: 0 10px; color: #6e7781; }
+  td.diff-text-cell { padding: 0 10px; white-space: pre; }
+  td.blob-num { width: 44px; min-width: 44px; text-align: right; padding: 0 10px;
+    color: #6e7781; background: #fff; user-select: none; }
+  td.blob-num[data-line-number]::before { content: attr(data-line-number); }
+  td.blob-code { padding: 0 10px; white-space: pre; }
+  .blob-code-deletion { background: #ffebe9; }
+  .blob-code-addition { background: #e6ffec; }
+  .blob-code-hunk { background: #f6f8fa; color: #6e7781; }
+</style>
+<div id="files"></div>
+<script>
+  // chrome.storage.local のスタブ
+  const _d = {};
+  window.chrome = {
+    storage: { local: {
+      get(k, cb) {
+        if (k === null) return cb(JSON.parse(JSON.stringify(_d)));
+        cb({ [k]: _d[k] });
+      },
+      set(o, cb) { Object.assign(_d, JSON.parse(JSON.stringify(o))); cb && cb(); },
+      remove(k, cb) { (Array.isArray(k) ? k : [k]).forEach((x) => delete _d[x]); cb && cb(); }
+    } }
+  };
+  window.__store = _d;
+
+  const num = (cls, n) =>
+    '<td class="blob-num ' + cls + (n === null ? ' empty-cell' : ' js-linkable-line-number') + '"' +
+    (n === null ? '' : ' data-line-number="' + n + '"') + '></td>';
+  const code = (cls, txt) => '<td class="blob-code blob-code-' + cls + '">' + txt + '</td>';
+  // 右側セルは js-blob-rnum を必ず持たせる（GitHub と同じ）
+  const R = (cls, n) =>
+    '<td class="blob-num ' + cls + (n === null ? ' empty-cell' : ' js-linkable-line-number js-blob-rnum') + '"' +
+    (n === null ? '' : ' data-line-number="' + n + '"') + '></td>';
+
+  const hunk = (span) =>
+    '<tr class="js-expandable-line"><td class="blob-num blob-num-expandable" colspan="' + span +
+    '"></td>' + code('hunk', '@@ -1,9 +1,9 @@') + '</tr>';
+
+  function unified() {
+    let h = hunk(2);
+    for (let i = 1; i <= 3; i++)
+      h += '<tr>' + num('blob-num-context', i) + R('blob-num-context', i) + code('context', ' const a = ' + i + ';') + '</tr>';
+    h += '<tr>' + num('blob-num-deletion', 4) + R('blob-num-deletion', null) + code('deletion', '-old line 4') + '</tr>';
+    h += '<tr>' + num('blob-num-deletion', 5) + R('blob-num-deletion', null) + code('deletion', '-old line 5') + '</tr>';
+    h += '<tr>' + num('blob-num-addition', null) + R('blob-num-addition', 4) + code('addition', '+new line 4') + '</tr>';
+    h += '<tr>' + num('blob-num-addition', null) + R('blob-num-addition', 5) + code('addition', '+new line 5') + '</tr>';
+    for (let i = 6; i <= 8; i++)
+      h += '<tr>' + num('blob-num-context', i) + R('blob-num-context', i) + code('context', ' const b = ' + i + ';') + '</tr>';
+    return h;
+  }
+
+  function split() {
+    let h = hunk(4);
+    for (let i = 1; i <= 3; i++)
+      h += '<tr>' + num('blob-num-context', i) + code('context', ' const a = ' + i + ';') +
+           R('blob-num-context', i) + code('context', ' const a = ' + i + ';') + '</tr>';
+    h += '<tr>' + num('blob-num-deletion', 4) + code('deletion', '-old line 4') +
+         R('blob-num-addition', 4) + code('addition', '+new line 4') + '</tr>';
+    h += '<tr>' + num('blob-num-deletion', 5) + code('deletion', '-old line 5') +
+         R('blob-num-addition', 5) + code('addition', '+new line 5') + '</tr>';
+    h += '<tr>' + num('blob-num-empty', null) + code('context', '') +
+         R('blob-num-addition', 6) + code('addition', '+brand new 6') + '</tr>';
+    for (let i = 6; i <= 8; i++)
+      h += '<tr>' + num('blob-num-context', i) + code('context', ' const b = ' + i + ';') +
+           R('blob-num-context', i + 1) + code('context', ' const b = ' + i + ';') + '</tr>';
+    return h;
+  }
+
+  function file(path, rows) {
+    return '<div class="file js-file js-details-container" data-tagsearch-path="' + path + '">' +
+      '<div class="file-header" data-path="' + path + '"><div class="file-info">' + path + '</div></div>' +
+      '<div class="js-file-content"><div class="data highlight js-blob-wrapper">' +
+      '<table class="diff-table js-diff-table"><tbody>' + rows + '</tbody></table>' +
+      '</div></div></div>';
+  }
+
+  window.renderUnified = () => {
+    document.getElementById('files').innerHTML = file('src/a.ts', unified()) + file('src/b.ts', unified());
+  };
+  // ---- 新しい Files changed 表示（実DOMのマークアップを再現）----
+  const SHA = { 'src/a.ts': 'diff-aaa111', 'src/b.ts': 'diff-bbb222' };
+
+  const nHunk = (span) =>
+    '<tr class="diff-line-row"><td colspan="' + span + '" role="gridcell" class="diff-hunk-cell">' +
+    '<code class="diff-text-cell hunk"><div class="diff-text-inner">@@ -1,9 +1,9 @@</div></code></td></tr>';
+
+  // key: l と r（null は空文字で渡す）
+  const dkey = (b, l, r) => 'b:' + b + '-l:' + (l || 'null') + '-r:' + (r || 'null');
+
+  const nNum = (side, n, key) =>
+    n === null
+      ? '<td role="gridcell" class="focusable-grid-cell empty-diff-line left-side"></td>'
+      : '<td class="focusable-grid-cell ' + (side === 'left' ? 'old' : 'new') + '-diff-line-number left-side"' +
+        ' data-diff-side="' + side + '" data-diff-line-key="' + key + '" data-line-number="' + n +
+        '" role="gridcell" style="background-color:#eef">' + n + '</td>';
+
+  const nText = (side, n, key, kind, txt) =>
+    n === null
+      ? '<td role="gridcell" class="focusable-grid-cell empty-diff-line left-side"></td>'
+      : '<td class="diff-text-cell v-align-top focusable-grid-cell right-side-diff-cell" data-diff-line-key="' + key +
+        '" data-diff-side="' + side + '" data-line-anchor="x" data-line-number="' + n + '" role="gridcell"' +
+        ' style="background-color:#f7f7f7">' +
+        '<code class="diff-text syntax-highlighted-line ' + kind + '"><div class="diff-text-inner">' + txt + '</div></code></td>';
+
+  function nextSplitRows() {
+    let h = nHunk(4);
+    for (let i = 1; i <= 3; i++) {
+      const k = dkey(1, i, i);
+      h += '<tr class="diff-line-row">' + nNum('left', i, k) + nText('left', i, k, 'context', ' const a = ' + i + ';') +
+           nNum('right', i, k) + nText('right', i, k, 'context', ' const a = ' + i + ';') + '</tr>';
+    }
+    for (const i of [4, 5]) {
+      const kl = dkey(2, i, null), kr = dkey(2, null, i);
+      h += '<tr class="diff-line-row">' + nNum('left', i, kl) + nText('left', i, kl, 'deletion', '-old line ' + i) +
+           nNum('right', i, kr) + nText('right', i, kr, 'addition', '+new line ' + i) + '</tr>';
+    }
+    const k6 = dkey(3, null, 6);
+    h += '<tr class="diff-line-row">' + nNum('left', null) + nText('left', null) +
+         nNum('right', 6, k6) + nText('right', 6, k6, 'addition', '+brand new 6') + '</tr>';
+    for (let i = 6; i <= 8; i++) {
+      const k = dkey(4, i, i + 1);
+      h += '<tr class="diff-line-row">' + nNum('left', i, k) + nText('left', i, k, 'context', ' const b = ' + i + ';') +
+           nNum('right', i + 1, k) + nText('right', i + 1, k, 'context', ' const b = ' + i + ';') + '</tr>';
+    }
+    return h;
+  }
+
+  function nextUnifiedRows() {
+    let h = nHunk(3);
+    const row = (l, r, kind, txt) => {
+      const k = dkey(1, l, r);
+      return '<tr class="diff-line-row">' + nNum('left', l, k) + nNum('right', r, k) +
+             nText(r ? 'right' : 'left', r || l, k, kind, txt) + '</tr>';
+    };
+    for (let i = 1; i <= 3; i++) h += row(i, i, 'context', ' const a = ' + i + ';');
+    h += row(4, null, 'deletion', '-old line 4');
+    h += row(5, null, 'deletion', '-old line 5');
+    h += row(null, 4, 'addition', '+new line 4');
+    h += row(null, 5, 'addition', '+new line 5');
+    for (let i = 6; i <= 8; i++) h += row(i, i, 'context', ' const b = ' + i + ';');
+    return h;
+  }
+
+  function nextFile(path, rows) {
+    const id = 'heading-' + path.replace(/\W/g, '');
+    return '<div class="file" role="region" aria-labelledby="' + id + '">' +
+      '<div class="file-header"><span id="' + id + '" class="file-info">' + path + '</span></div>' +
+      '<table role="grid" class="tab-size width-full" aria-label="Diff for: ' + path + '" data-diff-anchor="' + SHA[path] + '">' +
+      '<tbody>' + rows + '</tbody></table></div>';
+  }
+
+  window.renderNextSplit = () => {
+    document.getElementById('files').innerHTML =
+      nextFile('src/a.ts', nextSplitRows()) + nextFile('src/b.ts', nextSplitRows());
+  };
+  window.renderNextUnified = () => {
+    document.getElementById('files').innerHTML =
+      nextFile('src/a.ts', nextUnifiedRows()) + nextFile('src/b.ts', nextUnifiedRows());
+  };
+
+  window.renderSplit = () => {
+    document.getElementById('files').innerHTML = file('src/a.ts', split()) + file('src/b.ts', split());
+  };
+  renderUnified();
+</script>
+<script src="/content.js"></script>

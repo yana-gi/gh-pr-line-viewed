@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  body {
+    width: 320px;
+    margin: 0;
+    padding: 12px;
+    font: 13px/1.6 -apple-system, "Hiragino Sans", sans-serif;
+    color: #1f2328;
+  }
+  h1 { font-size: 13px; margin: 0 0 8px; }
+  .hint { color: #656d76; font-size: 11px; margin: 0 0 10px; }
+  ul { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+  li {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 0; border-top: 1px solid #d0d7de;
+  }
+  .pr { flex: 1; min-width: 0; }
+  .pr a { color: #0969da; text-decoration: none; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cnt { color: #656d76; font-size: 11px; }
+  button {
+    border: 1px solid #d0d7de; background: #fff; border-radius: 6px;
+    padding: 3px 8px; font-size: 11px; cursor: pointer;
+  }
+  button:hover { background: #f6f8fa; }
+  .danger { color: #cf222e; width: 100%; margin-top: 10px; }
+  .empty { color: #656d76; font-size: 12px; }
+  kbd { border: 1px solid #d0d7de; border-radius: 4px; padding: 0 4px; font-size: 10px; }
+</style>
+<h1>GitHub PR Line Viewed</h1>
+<p class="hint">
+  行番号をクリックで確認済み / Shift+クリックで範囲指定 /
+  <kbd>⇧N</kbd> 次の未確認へ / <kbd>⇧H</kbd> 確認済みを隠す
+</p>
+<ul id="list"></ul>
+<button class="danger" id="clear">保存した記録をすべて削除</button>
+<script src="popup.js"></script>

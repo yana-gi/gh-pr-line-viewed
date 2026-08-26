@@ -1,0 +1,322 @@
+/* GitHub PR Line Viewed */
+
+:root {
+  --glv-accent: #1f883d;
+  --glv-accent-soft: rgba(31, 136, 61, 0.14);
+}
+
+/* ---- 行 ---- */
+
+table.diff-table tr[data-glv-keys] > td.blob-num {
+  cursor: pointer;
+  position: relative;
+}
+
+table.diff-table tr[data-glv-keys]:hover > td.blob-num {
+  background-color: var(--glv-accent-soft);
+}
+
+table.diff-table tr.glv-viewed > td.blob-code,
+table.diff-table tr.glv-viewed > td.blob-num {
+  opacity: 0.38;
+}
+
+table.diff-table tr.glv-viewed > td.blob-num {
+  background-color: var(--glv-accent-soft);
+  opacity: 0.75;
+}
+
+table.diff-table tr.glv-viewed > td.blob-num:first-child {
+  box-shadow: inset 3px 0 0 var(--glv-accent);
+}
+
+table.diff-table tr.glv-viewed > td.blob-num:first-child::after {
+  content: "✓";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  font-size: 10px;
+  line-height: 20px;
+  color: var(--glv-accent);
+  font-weight: 600;
+}
+
+table.diff-table tr.glv-hidden {
+  display: none !important;
+}
+
+table.diff-table tr.glv-flash > td {
+  animation: glv-flash 1.5s ease-out;
+}
+
+@keyframes glv-flash {
+  0%, 40% { background-color: rgba(255, 212, 0, 0.35); }
+  100% { background-color: transparent; }
+}
+
+/* ---- ファイルヘッダのバッジ ---- */
+
+.glv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.glv-badge .glv-count {
+  padding: 0 6px;
+  border-radius: 10px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+}
+
+.glv-badge.glv-badge-done .glv-count {
+  border-color: var(--glv-accent);
+  color: var(--glv-accent);
+  background: var(--glv-accent-soft);
+}
+
+.glv-mini {
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  border-radius: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.glv-mini:hover {
+  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+}
+
+/* ---- 右下パネル ---- */
+
+.glv-panel {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 90;
+  width: 236px;
+  font-size: 12px;
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+
+.glv-panel.glv-right {
+  left: auto;
+  right: 16px;
+}
+
+.glv-side {
+  border: 0;
+  background: none;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  cursor: pointer;
+}
+
+.glv-side:hover { color: var(--fgColor-default, var(--color-fg-default, #1f2328)); }
+
+.glv-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
+  border-bottom: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  user-select: none;
+}
+
+.glv-title { font-weight: 600; flex: 1; }
+
+.glv-head-stat {
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  font-variant-numeric: tabular-nums;
+}
+
+.glv-chevron {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--fgColor-muted, var(--color-fg-muted, #656d76));
+}
+
+.glv-panel.glv-collapsed .glv-body { display: none; }
+.glv-panel.glv-collapsed .glv-head { border-bottom: 0; }
+.glv-panel.glv-collapsed .glv-chevron { transform: rotate(180deg); }
+
+.glv-panel.glv-done .glv-head { background: var(--glv-accent-soft); }
+
+.glv-body { padding: 10px; display: grid; gap: 8px; }
+
+.glv-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bgColor-neutral-muted, var(--color-neutral-muted, #eaeef2));
+  overflow: hidden;
+}
+
+.glv-bar {
+  height: 100%;
+  width: 0;
+  background: var(--glv-accent);
+  transition: width 0.2s ease;
+}
+
+.glv-stat { font-variant-numeric: tabular-nums; }
+.glv-stat b { font-size: 14px; }
+.glv-pct { color: var(--fgColor-muted, var(--color-fg-muted, #656d76)); }
+
+.glv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+.glv-btn {
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  border-radius: 6px;
+  padding: 5px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.glv-btn:hover { background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa)); }
+
+.glv-btn.glv-on {
+  border-color: var(--glv-accent);
+  color: var(--glv-accent);
+  background: var(--glv-accent-soft);
+}
+
+.glv-btn kbd {
+  font-size: 10px;
+  opacity: 0.7;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.glv-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.glv-opt input { margin: 0; }
+
+.glv-danger { color: var(--fgColor-danger, var(--color-danger-fg, #cf222e)); }
+
+.glv-note {
+  display: none;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+}
+
+/* ---- 新しい Files changed 表示（table[data-diff-anchor] + tr.diff-line-row） ---- */
+/* セルの背景色はインラインstyleで入るため !important が必要 */
+
+tr.diff-line-row.glv-viewed > td {
+  opacity: 0.42;
+}
+
+tr.diff-line-row.glv-viewed > td[data-line-number]:not(.diff-text-cell) {
+  background-color: var(--glv-accent-soft) !important;
+  opacity: 0.78;
+}
+
+tr.diff-line-row.glv-viewed > td:first-child {
+  position: relative;
+  box-shadow: inset 3px 0 0 var(--glv-accent);
+}
+
+tr.diff-line-row.glv-viewed > td:first-child::after {
+  content: "✓";
+  position: absolute;
+  left: 3px;
+  top: 0;
+  font-size: 10px;
+  line-height: 20px;
+  color: var(--glv-accent);
+  font-weight: 600;
+}
+
+tr.diff-line-row.glv-hidden {
+  display: none !important;
+}
+
+/* ---- 範囲選択したときに行番号の左に出る Viewed ボタン ---- */
+
+.glv-selbtn {
+  position: fixed;
+  z-index: 95;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 5px;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.glv-selbtn:hover {
+  background: var(--bgColor-muted, var(--color-canvas-subtle, #f6f8fa));
+}
+
+/* GitHub の Viewed と同じチェックボックス表現 */
+.glv-selbtn .glv-selbox {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #8c959f));
+  border-radius: 3px;
+  background: var(--bgColor-default, var(--color-canvas-default, #fff));
+  position: relative;
+  flex: none;
+}
+
+.glv-selbtn.glv-selbtn-on .glv-selbox {
+  background: var(--bgColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
+  border-color: var(--bgColor-accent-emphasis, var(--color-accent-emphasis, #0969da));
+}
+
+.glv-selbtn.glv-selbtn-on .glv-selbox::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.glv-selbtn .glv-sellabel {
+  font-weight: 500;
+}
+
+/* 行番号の左に余白が無いときはチェックボックスだけにする */
+.glv-selbtn.glv-selbtn-compact {
+  padding: 2px 4px;
+}
+
+.glv-selbtn.glv-selbtn-compact .glv-sellabel {
+  display: none;
+}

@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub PR Line Viewed",
+  "version": "1.0.0",
+  "description": "GitHub の Pull Request の diff を「行単位」で確認済みにできる拡張。どこまで読んだかを行ごとに記録します。",
+  "permissions": ["storage"],
+  "host_permissions": ["https://github.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GitHub PR Line Viewed"
+  }
+}
