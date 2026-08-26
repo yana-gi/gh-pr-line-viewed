@@ -1,0 +1,12 @@
+queue:
+  concurrency: 4
+  max_attempts: 3
+  timeout_ms: 30000
+
+logging:
+  level: info
+  destination: stdout
+
+metrics:
+  enabled: false
+  interval_ms: 60000
