@@ -3,6 +3,7 @@
 GitHub の Pull Request の diff を「行単位」で確認済みにできる Chrome 拡張です。
 GitHub 標準の Viewed はファイル単位なので、diff の大きいファイルだと
 どこまで読んだか分からなくなる、という問題を埋めるためのものです。
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/97b7a48c-6026-4ea8-b153-45ef1fc63bdb" />
 
 ## インストール
 
