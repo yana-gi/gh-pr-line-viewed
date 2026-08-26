@@ -8,28 +8,39 @@ export interface Task<T> {
   status: TaskStatus;
   attempts: number;
   createdAt: number;
+  lastError?: unknown;
 }
 
 export interface QueueOptions {
   concurrency: number;
   maxAttempts: number;
   timeoutMs: number;
+  backoffMs: number;
+  backoffFactor: number;
 }
 
 const DEFAULT_OPTIONS: QueueOptions = {
   concurrency: 4,
   maxAttempts: 3,
   timeoutMs: 30_000,
+  backoffMs: 500,
+  backoffFactor: 2,
 };
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * 順番待ちのタスクを一定数ずつ処理するだけの素朴なキュー。
  * 失敗したタスクは maxAttempts まで積み直す。
+ *
+ * 積み直しは指数バックオフで待つ。失敗が続くタスクが即座に
+ * 並び直して、他のタスクの実行枠を奪い続けるのを防ぐため。
  */
 export class TaskQueue<T> extends EventEmitter {
   private readonly options: QueueOptions;
   private readonly waiting: Task<T>[] = [];
   private readonly running = new Map<string, Task<T>>();
+  private readonly idleWaiters: Array<() => void> = [];
   private seq = 0;
 
   constructor(
@@ -61,26 +72,52 @@ export class TaskQueue<T> extends EventEmitter {
   private pump(): void {
     while (this.running.size < this.options.concurrency) {
       const task = this.waiting.shift();
-      if (!task) return;
+      if (!task) {
+        if (this.running.size === 0) this.releaseIdleWaiters();
+        return;
+      }
       void this.run(task);
     }
+  }
+
+  /** timeoutMs を超えたハンドラは打ち切って失敗扱いにする */
+  private async callHandler(task: Task<T>): Promise<void> {
+    let timer: NodeJS.Timeout | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`task ${task.id} timed out after ${this.options.timeoutMs}ms`)),
+        this.options.timeoutMs,
+      );
+    });
+
+    try {
+      await Promise.race([this.handler(task.payload), timeout]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  }
+
+  private backoffFor(attempts: number): number {
+    return this.options.backoffMs * this.options.backoffFactor ** (attempts - 1);
   }
 
   private async run(task: Task<T>): Promise<void> {
     task.status = 'running';
     task.attempts += 1;
     this.running.set(task.id, task);
-    console.log(`[queue] start ${task.id} (attempt ${task.attempts})`);
+    this.emit('start', task);
 
     try {
-      await this.handler(task.payload);
+      await this.callHandler(task);
       task.status = 'done';
       this.emit('done', task);
-      console.log(`[queue] done ${task.id}`);
     } catch (error) {
-      console.log(`[queue] failed ${task.id}`, error);
+      task.lastError = error;
       if (task.attempts < this.options.maxAttempts) {
+        const wait = this.backoffFor(task.attempts);
+        this.emit('retry', task, wait);
         task.status = 'pending';
+        await sleep(wait);
         this.waiting.push(task);
       } else {
         task.status = 'failed';
@@ -92,9 +129,17 @@ export class TaskQueue<T> extends EventEmitter {
     }
   }
 
-  async drain(): Promise<void> {
-    while (this.size > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+  private releaseIdleWaiters(): void {
+    while (this.idleWaiters.length) {
+      const resolve = this.idleWaiters.shift();
+      resolve?.();
     }
+  }
+
+  async drain(): Promise<void> {
+    if (this.size === 0) return;
+    await new Promise<void>((resolve) => {
+      this.idleWaiters.push(resolve);
+    });
   }
 }
