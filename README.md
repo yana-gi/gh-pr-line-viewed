@@ -47,24 +47,6 @@ changed 表示）の両方です。記録は PR 単位なので、どちらの U
 PR ごとの削除と全削除ができます。特定の PR だけ消したい場合は、その PR を開いて
 パネルの「このPRの記録をリセット」でも構いません。
 
-### GitHub Enterprise で使う
-
-`manifest.json` の 2 か所に自社ドメインを足してから、拡張を再読み込みします。
-
-```json
-{
-  "host_permissions": ["https://github.com/*", "https://github.example.com/*"],
-  "content_scripts": [
-    {
-      "matches": ["https://github.com/*", "https://github.example.com/*"],
-      "js": ["content.js"],
-      "css": ["content.css"],
-      "run_at": "document_idle"
-    }
-  ]
-}
-```
-
 ### 権限について
 
 使っている権限は `storage`（記録の保存）と `https://github.com/*` の 2 つだけです。
@@ -163,7 +145,7 @@ DOM の違いは `content.js` の `CLASSIC` / `NEXT` アダプタで吸収して
 
 - GitHub の DOM 変更に追従が必要です。表示が崩れたり反応しなくなった場合は
   `content.js` のアダプタ（セレクタ定義）を直してください
-- 既定では github.com のみが対象です（GitHub Enterprise は「設定」を参照）
+- github.com のみが対象です
 - PR に新しい commit が積まれて行番号がずれると、記録もずれます
 
 ## 開発
