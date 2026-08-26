@@ -1,12 +1,16 @@
 queue:
-  concurrency: 4
-  max_attempts: 3
-  timeout_ms: 30000
+  concurrency: 8
+  max_attempts: 5
+  timeout_ms: 15000
+  backoff_ms: 500
+  backoff_factor: 2
 
 logging:
-  level: info
+  level: debug
   destination: stdout
+  include_task_id: true
 
 metrics:
-  enabled: false
-  interval_ms: 60000
+  enabled: true
+  interval_ms: 30000
+  exporter: prometheus
