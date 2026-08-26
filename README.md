@@ -9,7 +9,7 @@ GitHub 標準の Viewed はファイル単位なので、diff の大きいファ
 1. このリポジトリを clone するか ZIP で落として、任意の場所に置く
 
    ```bash
-   git clone <このリポジトリのURL> gh-pr-line-viewed
+   git clone https://github.com/yana-gi/gh-pr-line-viewed.git
    ```
 
 2. Chrome で `chrome://extensions` を開く
