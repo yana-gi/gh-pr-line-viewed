@@ -519,11 +519,19 @@
     btn.style.display = '';
 
     // 選択範囲の先頭行の、行番号のすぐ左に置く。
-    // 左に余白が無いときはラベルを落としてチェックボックスだけの幅にする。
-    const anchorCell = sel[0].cell || sel[0].tr;
+    // 削除を含む差分では左端が変更前の行番号になるので、選択されている中では
+    // 変更後（右側）の行番号を優先して基準にする。削除側だけを選んだ場合は
+    // その行番号の左に出す。
+    const firstRow = sel[0].tr;
+    const picked = $$('td[data-line-number]:not(.diff-text-cell)[data-selected="true"]', firstRow);
+    const anchorCell =
+      picked.find((c) => c.getAttribute('data-diff-side') === 'right') ||
+      picked[0] ||
+      sel[0].cell ||
+      firstRow;
     const r = anchorCell.getBoundingClientRect();
     if (!r.height) { hideSelBtn(); return; }
-    const rowLeft = sel[0].tr.getBoundingClientRect().left;
+    const rowLeft = firstRow.getBoundingClientRect().left;
 
     btn.classList.remove('glv-selbtn-compact');
     let w = btn.offsetWidth || 74;
