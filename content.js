@@ -452,16 +452,25 @@
   // 押すのは文言が Cancel のものだけで、書きかけがある欄には触らない
   // （Cancel で入力が消えるため）。
   function closeEmptyCommentForm(sel) {
-    const last = sel[sel.length - 1].tr;
-    const bottom = last.getBoundingClientRect().bottom;
+    // コメント欄は選択範囲の下に出るとは限らない（上に開くこともある）ので、
+    // 上下どちらでも選択範囲から一番近い空のコメント欄を選ぶ。
+    const selTop = sel[0].tr.getBoundingClientRect().top;
+    const selBottom = sel[sel.length - 1].tr.getBoundingClientRect().bottom;
+    const gap = (r) => {
+      if (r.bottom < selTop) return selTop - r.bottom;
+      if (r.top > selBottom) return r.top - selBottom;
+      return 0;
+    };
 
-    const all = $$('textarea').map((t) => ({ t, r: t.getBoundingClientRect() }));
+    const all = $$('textarea').map((t) => ({ t, r: t.getBoundingClientRect(), gap: 0 }));
+    all.forEach((x) => { x.gap = gap(x.r); });
     const ta = all
-      .filter((x) => !x.t.value.trim() && x.r.height > 0 && x.r.top > bottom - 60 && x.r.top < bottom + 800)
-      .sort((a, b) => a.r.top - b.r.top)[0];
+      .filter((x) => !x.t.value.trim() && x.r.height > 0 && x.gap < 1200)
+      .sort((a, b) => a.gap - b.gap)[0];
     if (!ta) {
-      trace({ step: 'no-textarea', selBottom: Math.round(bottom),
-              textareas: all.map((x) => ({ top: Math.round(x.r.top), h: Math.round(x.r.height), len: x.t.value.length })) });
+      trace({ step: 'no-textarea', selTop: Math.round(selTop), selBottom: Math.round(selBottom),
+              textareas: all.map((x) => ({ top: Math.round(x.r.top), h: Math.round(x.r.height),
+                                           gap: Math.round(x.gap), len: x.t.value.length })) });
       return false;
     }
 
@@ -474,7 +483,8 @@
       const cancel = $$(CLICKABLE, box).find((b) => isCancel(b) && near(b));
       if (cancel) {
         cancel.click();
-        trace({ step: 'clicked-ancestor', level: i, tag: cancel.tagName, cls: (cancel.className || '').toString().slice(0, 60) });
+        trace({ step: 'clicked-ancestor', level: i, taTop: Math.round(taTop), gap: Math.round(ta.gap),
+                tag: cancel.tagName, cls: (cancel.className || '').toString().slice(0, 60) });
         return true;
       }
     }
